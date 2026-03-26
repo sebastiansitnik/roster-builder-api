@@ -37,7 +37,7 @@ REST API for creating, managing Warhammer 40k army rosters.
 
 Clone & Build
 
-    git clone https://github.com/pl-sitnik/roster-builder-api.git
+    git clone https://github.com/sebastiansitnik/roster-builder-api
     cd roster-builder-api
     mvn clean install
 
@@ -83,7 +83,7 @@ Full config in application-local.yml
 
 📁 Project Structure
 
-    src/main/java/pl/sitnik/warhammer/rosterbuilderapi/
+    src/main/java/com/sitnik/warhammer/rosterbuilderapi/
     ├── config/          # Spring Security, JPA, Swagger
     ├── controller/      # REST endpoints
     ├── dto/             # Request/Response DTOs
