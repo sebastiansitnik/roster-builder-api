@@ -18,4 +18,5 @@ public class Faction {
 
     @Column(unique = true, nullable = false)
     private String name;
+
 }
