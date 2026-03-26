@@ -1,4 +1,4 @@
-package pl.sitnik.warhammer.rosterbuilderapi;
+package com.sitnik.warhammer.rosterbuilderapi;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
