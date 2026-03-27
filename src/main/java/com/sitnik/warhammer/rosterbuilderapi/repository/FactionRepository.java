@@ -8,4 +8,5 @@ import java.util.List;
 public interface FactionRepository extends JpaRepository<Faction, String> {
 
     List<Faction> findFactionsByNameContainsIgnoreCase(String name);
+
 }

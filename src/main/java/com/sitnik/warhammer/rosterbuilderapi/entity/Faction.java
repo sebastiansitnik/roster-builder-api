@@ -14,9 +14,12 @@ public class Faction {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
     @Column(unique = true, nullable = false)
     private String name;
+
+    @Column(nullable = false, length = 500)
+    private String description;
 
 }
