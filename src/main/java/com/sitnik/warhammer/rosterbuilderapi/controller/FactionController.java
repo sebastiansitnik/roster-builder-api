@@ -42,10 +42,12 @@ public class FactionController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Faction> update(@PathVariable long id,@RequestBody Faction faction) {
+    public ResponseEntity<Faction> update(@PathVariable Long id, @Valid @RequestBody Faction faction) {
+        if (!factionRepository.existsById(Long.toString(id))) {
+            return ResponseEntity.notFound().build();
+        }
         faction.setId(id);
-        Faction saved = factionRepository.save(faction);
-        return ResponseEntity.ok(saved);
+        return ResponseEntity.ok(factionRepository.save(faction));
     }
 
     @DeleteMapping("/{id}")
