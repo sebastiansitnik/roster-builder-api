@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -18,8 +17,7 @@ import java.util.Optional;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -210,10 +208,64 @@ class FactionControllerTest {
     }
 
     @Test
-    void delete() {
+    void deleteExistingFactionReturnsOk() throws Exception {
+        // Given
+        long id = 1L;
+        when(factionRepository.existsById("1")).thenReturn(true);
+        doNothing().when(factionRepository).deleteById("1");
+
+        // Then
+        mockMvc.perform(delete("/api/factions/{id}", id))
+                .andExpect(status().isOk());
+
+        verify(factionRepository).deleteById("1");
     }
 
     @Test
-    void searchByName() {
+    void deleteNonExistentFactionReturnsNotFound() throws Exception {
+        // Given
+        long id = 999L;
+        when(factionRepository.existsById("999")).thenReturn(false);
+
+        // Then
+        mockMvc.perform(delete("/api/factions/{id}", id))
+                .andExpect(status().isNotFound());
+
+        verify(factionRepository, never()).deleteById(anyString());
+    }
+
+    @Test
+    void searchByNameReturnsResults() throws Exception {
+        // Given
+        String name = "marines";
+        List<Faction> factions = List.of(
+                new Faction(1L, "Space Marines", "Elite troops"),
+                new Faction(2L, "Blood Marines", "Another faction")
+        );
+
+        // When
+        when(factionRepository.findFactionsByNameContainsIgnoreCase(name))
+                .thenReturn(factions);
+
+        // Then
+        mockMvc.perform(get("/api/factions/search")
+                        .param("name", name))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].name").value("Space Marines"))
+                .andExpect(jsonPath("$[1].name").value("Blood Marines"));
+    }
+
+    @Test
+    void searchByNameReturnsNoContentWhenEmpty() throws Exception {
+        // Given
+        String name = "unknown";
+        when(factionRepository.findFactionsByNameContainsIgnoreCase(name))
+                .thenReturn(List.of());
+
+        // Then
+        mockMvc.perform(get("/api/factions/search")
+                        .param("name", name))
+                .andExpect(status().isNoContent());
     }
 }
