@@ -67,5 +67,4 @@ public class FactionController {
         }
         return ResponseEntity.ok(factions);
     }
-
 }
