@@ -6,34 +6,20 @@ REST API for creating, managing Warhammer 40k army rosters.
 
     🪖 Faction management (Space Marines, Orks, Necrons, etc.)
 
-    ⚔️ Roster creation with detachments and units
-
-    🎒 Wargear and upgrades configuration with automatic points calculation
-
-    ✅ Roster validation against tournament rules (CP, power level)
-
-    👥 User system with roles (player, organizer)
-
-    📊 PDF/JSON roster export
+    ⚔️ Simple Roster creation
 
 🛠 Tech Stack
 
-    Backend: Spring Boot 3.x, Spring Data JPA, Spring Security (JWT)
-    Database: PostgreSQL
+    Backend: Spring Boot 3.3.13, Spring Data JPA, Spring Security (JWT)
+    Database: H2
     Documentation: OpenAPI (Swagger)
-    Tests: JUnit 5, Testcontainers
-    Docker: Compose (app + postgres + pgadmin)
-    CI/CD: GitHub Actions
+    Tests: JUnit 5
 
 🚀 Quick Start
 
     Prerequisites:
     
         Java 21
-    
-        Docker (optional)
-    
-        PostgreSQL 15+
 
 Clone & Build
 
@@ -41,45 +27,27 @@ Clone & Build
     cd roster-builder-api
     mvn clean install
 
-Run with Docker
-
-    docker-compose up -d
-    mvn spring-boot:run
-
 📡 API Endpoints
 
 Swagger UI: http://localhost:8080/swagger-ui.html
 
     POST /api/v1/factions       # Create faction
-    POST /api/v1/rosters        # Create roster
-    GET  /api/v1/rosters/{id}   # Get roster
-    PUT  /api/v1/rosters/{id}   # Update roster
-    POST /api/v1/auth/login     # JWT login
 
 🗄 Database Schema
 
-    User → Roster → Detachment → Unit → Equipment
-    ↓
-    Faction
+    Faction -> Roster
+
 See /docs/architecture.md for details
 
 🧪 Testing
 
     mvn test                    # All tests
     mvn test -Dtest=*RosterServiceTest  # Single class
-Coverage: 85%+
+Coverage: 100%
 
 🔧 Configuration
 
-# application.yml
-spring:
-    datasource:
-        url: jdbc:postgresql://localhost:5432/rosterdb
-    jpa:
-        hibernate:
-            ddl-auto: validate
-
-Full config in application-local.yml
+Full config in application.yml
 
 📁 Project Structure
 
@@ -88,6 +56,7 @@ Full config in application-local.yml
     ├── controller/      # REST endpoints
     ├── dto/             # Request/Response DTOs
     ├── entity/          # JPA Entities
+    ├── enums/           # Domain enums
     ├── exception/       # Global exception handling
     ├── repository/      # Spring Data JPA
     ├── security/        # JWT, Authentication

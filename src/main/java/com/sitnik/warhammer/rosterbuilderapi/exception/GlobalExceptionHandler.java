@@ -1,4 +1,4 @@
-package com.sitnik.warhammer.rosterbuilderapi.controller;
+package com.sitnik.warhammer.rosterbuilderapi.exception;
 
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
