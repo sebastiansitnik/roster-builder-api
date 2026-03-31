@@ -1,4 +1,4 @@
-Warhammer 40k Roster Builder API 🚀
+Warhammer 40k Roster Builder API - WORK IN PROGRESS🚀
 
 REST API for creating, managing Warhammer 40k army rosters.
 
