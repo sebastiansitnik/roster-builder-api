@@ -9,4 +9,5 @@ public interface FactionRepository extends JpaRepository<Faction, String> {
 
     List<Faction> findFactionsByNameContainsIgnoreCase(String name);
 
+    boolean existsByName(String name);
 }
