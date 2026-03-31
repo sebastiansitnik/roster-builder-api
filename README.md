@@ -13,9 +13,7 @@ REST API for creating, managing Warhammer 40k army rosters.
     Backend: Spring Boot 3.3.13, Spring Data JPA, Spring Security (JWT)
     Database: H2
     Documentation: OpenAPI (Swagger)
-    Tests: JUnit 5, Testcontainers
-    Docker: Compose (app + postgres + pgadmin)
-    CI/CD: GitHub Actions
+    Tests: JUnit 5
 
 🚀 Quick Start
 
