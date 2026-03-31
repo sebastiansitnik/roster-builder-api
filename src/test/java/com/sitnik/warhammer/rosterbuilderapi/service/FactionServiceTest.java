@@ -3,6 +3,8 @@ package com.sitnik.warhammer.rosterbuilderapi.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sitnik.warhammer.rosterbuilderapi.entity.Faction;
 import com.sitnik.warhammer.rosterbuilderapi.repository.FactionRepository;
+import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -14,11 +16,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -37,6 +41,8 @@ class FactionServiceTest {
 
     @MockBean
     private FactionRepository factionRepository;
+    @Autowired
+    private FactionService factionService;
 
     @Test
     void findAllReturnsEmptyList() throws Exception {
@@ -44,11 +50,11 @@ class FactionServiceTest {
         when(factionRepository.findAll()).thenReturn(List.of());
 
         // Then
-        mockMvc.perform(get("/api/factions"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(0));
+        List<Faction> result = factionService.findAll();
+
+        assertThat(result).isEmpty();
+        verify(factionRepository).findAll();
+
     }
 
     @Test
@@ -62,12 +68,12 @@ class FactionServiceTest {
         when(factionRepository.findAll()).thenReturn(factions);
 
         // Then
-        mockMvc.perform(get("/api/factions"))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].name").value("Space Marines"))
-                .andExpect(jsonPath("$[1].name").value("Orcs"));
+        List<Faction> result = factionService.findAll();
+
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getName()).isEqualTo("Space Marines");
+        assertThat(result.get(1).getName()).isEqualTo("Orcs");
+        verify(factionRepository).findAll();
     }
 
     @Test
@@ -80,197 +86,261 @@ class FactionServiceTest {
         when(factionRepository.findById(Long.toString(id))).thenReturn(Optional.of(faction));
 
         // Then
-        mockMvc.perform(get("/api/factions/{id}", id))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Space Marines"));
+        Faction result = factionService.findById(id);
+        assertThat(result).isEqualTo(faction);
+        verify(factionRepository).findById(Long.toString(id));
     }
-
+//
     @Test
-    void findByIdReturnsNotFound() throws Exception {
+    void findByIdThrowsEntityNotFoundWhenFactionDoesNotExist() throws Exception {
         // Given
         long id = 1L;
 
-        // When
-        when(factionRepository.findById(Long.toString(id))).thenReturn(Optional.empty());
-
         // Then
-        mockMvc.perform(get("/api/factions/{id}", id))
-                .andExpect(status().isNotFound());
+        EntityNotFoundException exception = assertThrows(
+                EntityNotFoundException.class,
+                () -> factionService.findById(id)
+        );
+
+        assertThat(exception.getMessage())
+                .contains("Faction with id " + id + " not found");
+        verify(factionRepository).findById(Long.toString(id));
     }
-
-    @Test
-    void createReturnsSavedFaction() throws Exception {
-        // Given
-        Faction inputFaction = new Faction(null, "Chaos Space Marines", "Traitors");
-        Faction savedFaction = new Faction(1L, "Chaos Space Marines", "Traitors");
-
-        // When
-        when(factionRepository.save(any(Faction.class))).thenReturn(savedFaction);
-
-        // Then
-        mockMvc.perform(post("/api/factions")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(inputFaction)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.name").value("Chaos Space Marines"));
-    }
-
-    @Test
-    void createWithInvalidDataReturnsBadRequest() throws Exception {
-        // Given
-        Faction invalidFaction = new Faction(null, null, "Description");
-
-        // Then
-        mockMvc.perform(post("/api/factions")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidFaction)))
-                .andExpect(status().isBadRequest());  // 400 (validation @NotNull)
-    }
-
-    @Test
-    void bulkCreatesMultipleFactions() throws Exception {
-        // Given
-        Faction marines = new Faction(null, "Space Marines", "Ultramarines");
-        Faction orks = new Faction(null, "Orks", "Waaagh!");
-        List<Faction> input = List.of(marines, orks);
-
-        Faction savedMarines = new Faction(1L, "Space Marines", "Ultramarines");
-        Faction savedOrks = new Faction(2L, "Orks", "Waaagh!");
-        List<Faction> saved = List.of(savedMarines, savedOrks);
-
-        when(factionRepository.saveAll(anyList())).thenReturn(saved);
-
-        // When/Then
-        mockMvc.perform(post("/api/factions/bulk")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(input)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].name").value("Space Marines"))
-                .andExpect(jsonPath("$[1].name").value("Orks"));
-    }
-// TODO - Need to handle Duplicates
-//    @Test
-//    void bulkHandlesDuplicateName() throws Exception {
-//        // Given
-//        Faction existing = new Faction(null, "Space Marines", "Ultramarines");  // Duplikat!
-//        Faction newFaction = new Faction(null, "Orks", "Waaagh!");
-//        List<Faction> input = List.of(existing, newFaction);
 //
-//        // When
-//        doThrow(new DataIntegrityViolationException("Duplicate name"))
-//                .when(factionRepository).saveAll(anyList());
-//
-//        // Then
-//        mockMvc.perform(post("/api/factions/bulk")
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content(objectMapper.writeValueAsString(input)))
-//                .andExpect(status().isBadRequest());  // 400 lub 409 Conflict
-//    }
+    @Test
+    void createFactionReturnsSavedFactionWhenNameIsUnique() {
+        // Given
+        Faction inputFaction = new Faction(null, "Orks", "Waaagh!");
+        Faction savedFaction = new Faction(1L, "Orks", "Waaagh!");
+
+        given(factionRepository.existsByName("Orks")).willReturn(false);
+        given(factionRepository.save(inputFaction)).willReturn(savedFaction);
+
+        // When
+        Faction result = factionService.create(inputFaction);
+
+        // Then
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getName()).isEqualTo("Orks");
+        verify(factionRepository).existsByName("Orks");
+        verify(factionRepository).save(inputFaction);
+    }
 
     @Test
-    void updateFactionSuccessfully() throws Exception {
+    void createFactionWhenNameExistsThrowsEntityExistsException() {
+        // Given
+        Faction faction = new Faction(null, "Space Marines", "Ultramarines");
+        given(factionRepository.existsByName("Space Marines")).willReturn(true);
+
+        // When & Then
+        EntityExistsException exception = assertThrows(
+                EntityExistsException.class,
+                () -> factionService.create(faction)
+        );
+
+        assertThat(exception.getMessage())
+                .contains("Faction with name Space Marines already exists");
+        verify(factionRepository).existsByName("Space Marines");
+        verify(factionRepository, never()).save(any());
+    }
+
+    @Test
+    void bulkReturnsSavedFactionsWhenAllNamesUnique() {
+        // Given
+        List<Faction> inputFactions = List.of(
+                new Faction(null, "Orks", "Waaagh!"),
+                new Faction(null, "Eldar", "Craftworld")
+        );
+        List<Faction> savedFactions = List.of(
+                new Faction(1L, "Orks", "Waaagh!"),
+                new Faction(2L, "Eldar", "Craftworld")
+        );
+
+        given(factionRepository.existsByName("Orks")).willReturn(false);
+        given(factionRepository.existsByName("Eldar")).willReturn(false);
+        given(factionRepository.saveAll(inputFactions)).willReturn(savedFactions);
+
+        // When
+        List<Faction> result = factionService.bulk(inputFactions);
+
+        // Then
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getName()).isEqualTo("Orks");
+        verify(factionRepository).existsByName("Orks");
+        verify(factionRepository).existsByName("Eldar");
+        verify(factionRepository).saveAll(inputFactions);
+    }
+
+    @Test
+    void bulkThrowsEntityExistsExceptionWhenAnyDuplicateExists() {
+        // Given
+        List<Faction> factionsWithDuplicate = List.of(
+                new Faction(null, "Orks", "Waaagh!")
+        );
+
+        given(factionRepository.existsByName("Orks")).willReturn(true);
+
+        // Then
+        EntityExistsException exception = assertThrows(
+                EntityExistsException.class,
+                () -> factionService.bulk(factionsWithDuplicate)
+        );
+
+        assertThat(exception.getMessage())
+                .contains("Factions with name Orks already exists");
+
+        verify(factionRepository).existsByName("Orks");
+        verify(factionRepository, never()).saveAll(anyList());
+    }
+
+    @Test
+    void bulkDetectsMultipleDuplicates() {
+        // Given
+        List<Faction> factionsWithMultipleDups = List.of(
+                new Faction(null, "Orks", ""),
+                new Faction(null, "Marines", ""),
+                new Faction(null, "Eldar", "")
+        );
+
+        given(factionRepository.existsByName("Orks")).willReturn(true);
+        given(factionRepository.existsByName("Marines")).willReturn(true);
+        given(factionRepository.existsByName("Eldar")).willReturn(false);
+
+        // Then
+        EntityExistsException exception = assertThrows(
+                EntityExistsException.class,
+                () -> factionService.bulk(factionsWithMultipleDups)
+        );
+
+        assertThat(exception.getMessage())
+                .contains("Orks, Marines");
+        verify(factionRepository, never()).saveAll(anyList());
+    }
+
+    @Test
+    void updateFactionReturnsUpdatedFactionWhenExists() {
         // Given
         Long id = 1L;
-        Faction updatedFaction = new Faction(id, "Ultramarines", "Updated description");
-        when(factionRepository.existsById("1"))
-                .thenReturn(true);
-        when(factionRepository.save(any(Faction.class))).thenReturn(updatedFaction);
+        Faction inputFaction = new Faction(null, "Ultramarines", "Updated description");
+        Faction savedFaction = new Faction(id, "Ultramarines", "Updated description");
 
-        mockMvc.perform(put("/api/factions/{id}", id)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updatedFaction)))
-                .andExpect(status().isOk());
+        given(factionRepository.existsById("1")).willReturn(true);
+        given(factionRepository.save(argThat(f -> f.getId().equals(id))))
+                .willReturn(savedFaction);
+
+        // When
+        Faction result = factionService.update(id, inputFaction);
+
+        // Then
+        assertThat(result.getId()).isEqualTo(id);
+        assertThat(result.getName()).isEqualTo("Ultramarines");
+        verify(factionRepository).existsById("1");
+        verify(factionRepository).save(argThat(f -> f.getId().equals(id)));
     }
 
     @Test
-    void updateNonExistentFactionReturnsNotFound() throws Exception {
+    void updateFactionThrowsEntityNotFoundWhenFactionDoesNotExist() {
         // Given
         Long id = 999L;
-        Faction faction = new Faction(id, "Nonexistent", "Test");
-        when(factionRepository.existsById("999"))  // String!
-                .thenReturn(false);
+        Faction faction = new Faction(null, "Nonexistent", "Test");
 
-        mockMvc.perform(put("/api/factions/{id}", id)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(faction)))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void updateExistentFactionWithTooShortDescription() throws Exception {
-        // Given
-        Long id = 1L;
-        Faction invalidFaction = new Faction(id, "Ultramarines", "a");  // @Size(min=3)
-        when(factionRepository.existsById("1")).thenReturn(true);
-
-        mockMvc.perform(put("/api/factions/{id}", id)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidFaction)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void deleteExistingFactionReturnsOk() throws Exception {
-        // Given
-        long id = 1L;
-        when(factionRepository.existsById("1")).thenReturn(true);
-        doNothing().when(factionRepository).deleteById("1");
+        given(factionRepository.existsById("999")).willReturn(false);
 
         // Then
-        mockMvc.perform(delete("/api/factions/{id}", id))
-                .andExpect(status().isOk());
+        EntityNotFoundException exception = assertThrows(
+                EntityNotFoundException.class,
+                () -> factionService.update(id, faction)
+        );
 
+        assertThat(exception.getMessage())
+                .contains("Faction with id " + id + " not found, cannot update");
+        verify(factionRepository).existsById("999");
+        verify(factionRepository, never()).save(any());
+    }
+
+    @Test
+    void updateSetsCorrectIdOnFactionBeforeSave() {
+        // Given
+        Long id = 2L;
+        Faction faction = new Faction(null, "Blood Angels", "Updated");
+
+        given(factionRepository.existsById("2")).willReturn(true);
+        given(factionRepository.save(any(Faction.class)))
+                .willAnswer(invocation -> {
+                    Faction saved = invocation.getArgument(0);
+                    assertThat(saved.getId()).isEqualTo(id);
+                    return saved;
+                });
+
+        // Then
+        factionService.update(id, faction);
+
+        verify(factionRepository).save(argThat(f -> f.getId().equals(id)));
+    }
+
+    @Test
+    void deleteFactionWhenFactionExists() {
+        // Given
+        Long id = 1L;
+        given(factionRepository.existsById("1")).willReturn(true);
+
+        // Then
+        factionService.delete(id);
+
+        verify(factionRepository).existsById("1");
         verify(factionRepository).deleteById("1");
     }
 
     @Test
-    void deleteNonExistentFactionReturnsNotFound() throws Exception {
+    void deleteFactionThrowsEntityNotFoundWhenFactionDoesNotExist() {
         // Given
-        long id = 999L;
-        when(factionRepository.existsById("999")).thenReturn(false);
+        Long id = 999L;
+        given(factionRepository.existsById("999")).willReturn(false);
 
         // Then
-        mockMvc.perform(delete("/api/factions/{id}", id))
-                .andExpect(status().isNotFound());
+        EntityNotFoundException exception = assertThrows(
+                EntityNotFoundException.class,
+                () -> factionService.delete(id)
+        );
 
+        assertThat(exception.getMessage())
+                .contains("Faction with id " + id + " not found, cannot delete");
+        verify(factionRepository).existsById("999");
         verify(factionRepository, never()).deleteById(anyString());
     }
 
     @Test
-    void searchByNameReturnsResults() throws Exception {
+    void searchByNameContainingReturnsMatchingFactions() {
         // Given
-        String name = "marines";
-        List<Faction> factions = List.of(
-                new Faction(1L, "Space Marines", "Elite troops"),
-                new Faction(2L, "Blood Marines", "Another faction")
+        String name = "marine";
+        List<Faction> matchingFactions = List.of(
+                new Faction(1L, "Space Marines", "Ultramarines"),
+                new Faction(2L, "Blood Marines", "Death Company")
         );
 
-        // When
-        when(factionRepository.findFactionsByNameContainsIgnoreCase(name))
-                .thenReturn(factions);
+        given(factionRepository.findFactionsByNameContainsIgnoreCase("marine"))
+                .willReturn(matchingFactions);
 
         // Then
-        mockMvc.perform(get("/api/factions/search")
-                        .param("name", name))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].name").value("Space Marines"))
-                .andExpect(jsonPath("$[1].name").value("Blood Marines"));
+        List<Faction> result = factionService.searchByNameContaining("marine");
+
+        assertThat(result).hasSize(2);
+        assertThat(result)
+                .extracting(Faction::getName)
+                .contains("Space Marines", "Blood Marines");
+        verify(factionRepository).findFactionsByNameContainsIgnoreCase("marine");
     }
 
     @Test
-    void searchByNameReturnsNoContentWhenEmpty() throws Exception {
+    void searchByNameContainingReturnsEmptyListWhenNoMatches() {
         // Given
-        String name = "unknown";
-        when(factionRepository.findFactionsByNameContainsIgnoreCase(name))
-                .thenReturn(List.of());
+        given(factionRepository.findFactionsByNameContainsIgnoreCase("xyz"))
+                .willReturn(List.of());
 
         // Then
-        mockMvc.perform(get("/api/factions/search")
-                        .param("name", name))
-                .andExpect(status().isNoContent());
-    }
+        List<Faction> result = factionService.searchByNameContaining("xyz");
 
+        assertThat(result).isEmpty();
+        verify(factionRepository).findFactionsByNameContainsIgnoreCase("xyz");
+    }
 }
