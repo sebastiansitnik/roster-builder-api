@@ -1,6 +1,6 @@
 Warhammer 40k Roster Builder API - WORK IN PROGRESS🚀
 
-[![Java CI](https://github.com/sebastiansitnik/roster-builder-api/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sebastiansitnik/roster-builder-apiactions/workflows/ci.yml)
+[![Java CI](https://github.com/sebastiansitnik/roster-builder-api/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sebastiansitnik/roster-builder-api/actions/workflows/ci.yml)
 
 REST API for creating, managing Warhammer 40k army rosters.
 
