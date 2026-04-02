@@ -10,6 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -37,16 +41,25 @@ class FactionControllerTest {
     private FactionService factionService;
 
     @Test
-    void findAllReturnsEmptyList() throws Exception {
+    void findAllReturnsEmptyPage() throws Exception {
+        // Given
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Faction> emptyPage = new PageImpl<>(List.of(), pageable, 0);
+
         // When
-        when(factionService.findAll()).thenReturn(List.of());
+        when(factionService.findAll(any(Pageable.class))).thenReturn(emptyPage);
 
         // Then
-        mockMvc.perform(get("/api/factions"))
+        mockMvc.perform(get("/api/factions")
+                        .param("page", "0")
+                        .param("size", "10"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(0));
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content").isEmpty())
+                .andExpect(jsonPath("$.totalElements").value(0))
+                .andExpect(jsonPath("$.number").value(0))
+                .andExpect(jsonPath("$.size").value(10));
     }
 
     @Test
@@ -56,16 +69,25 @@ class FactionControllerTest {
         Faction orcs = new Faction(2L, "Orcs", "Waaagh!");
         List<Faction> factions = List.of(marines, orcs);
 
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Faction> expectedPage = new PageImpl<>(factions, pageable, 2);
+
         // When
-        when(factionService.findAll()).thenReturn(factions);
+        when(factionService.findAll(any(Pageable.class))).thenReturn(expectedPage);
 
         // Then
-        mockMvc.perform(get("/api/factions"))
+        mockMvc.perform(get("/api/factions")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .accept(MediaType.APPLICATION_JSON))  // Żąda JSON
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].name").value("Space Marines"))
-                .andExpect(jsonPath("$[1].name").value("Orcs"));
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.content[0].name").value("Space Marines"))
+                .andExpect(jsonPath("$.content[1].name").value("Orcs"))
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.number").value(0))
+                .andExpect(jsonPath("$.size").value(10));
     }
 
     @Test
@@ -93,7 +115,7 @@ class FactionControllerTest {
 
         // Then
         mockMvc.perform(get("/api/factions/{id}", id))
-                .andExpect(status().isNotFound());
+                .andExpect(status().is(409));
     }
 
     @Test
@@ -188,7 +210,7 @@ class FactionControllerTest {
         mockMvc.perform(put("/api/factions/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(faction)))
-                .andExpect(status().isNotFound());
+                .andExpect(status().is(409));
     }
 
     @Test
@@ -223,7 +245,7 @@ class FactionControllerTest {
                 .when(factionService).delete(id);
 
         mockMvc.perform(delete("/api/factions/{id}", id))
-                .andExpect(status().isNotFound());
+                .andExpect(status().is(409));
 
         verify(factionService).delete(id);
     }
