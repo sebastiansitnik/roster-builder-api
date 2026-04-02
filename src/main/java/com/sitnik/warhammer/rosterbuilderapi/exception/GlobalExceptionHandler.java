@@ -14,9 +14,10 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<Void> handleNotFound(EntityNotFoundException e) {
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<Map<String,String>> handleNotFound(EntityNotFoundException e) {
+        return ResponseEntity.status(409).body(Map.of("error", e.getMessage()));
     }
+
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidation(MethodArgumentNotValidException e) {

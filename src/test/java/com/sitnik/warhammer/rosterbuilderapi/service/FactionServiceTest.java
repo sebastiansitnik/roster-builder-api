@@ -10,14 +10,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -25,9 +27,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(FactionService.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -46,34 +45,41 @@ class FactionServiceTest {
 
     @Test
     void findAllReturnsEmptyList() throws Exception {
+
+        Pageable pageable = PageRequest.of(0, 10);
         // When
-        when(factionRepository.findAll()).thenReturn(List.of());
+        when(factionRepository.findAll(pageable)).thenReturn(Page.empty());
 
         // Then
-        List<Faction> result = factionService.findAll();
+        Page<Faction> result = factionService.findAll(pageable);
 
         assertThat(result).isEmpty();
-        verify(factionRepository).findAll();
+        verify(factionRepository).findAll(pageable);
 
     }
 
     @Test
-    void findAllReturnsListWithFactions() throws Exception {
+    void findAllReturnsListWithFactions() {
         // Given
         Faction marines = new Faction(1L, "Space Marines", "Ultramarines Chapter");
         Faction orcs = new Faction(2L, "Orcs", "Waaagh!");
         List<Faction> factions = List.of(marines, orcs);
 
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Faction> expectedPage = new PageImpl<>(factions, pageable, 2);  //
+
         // When
-        when(factionRepository.findAll()).thenReturn(factions);
+        when(factionRepository.findAll(pageable)).thenReturn(expectedPage);
 
         // Then
-        List<Faction> result = factionService.findAll();
+        Page<Faction> result = factionService.findAll(pageable);
 
-        assertThat(result).hasSize(2);
-        assertThat(result.get(0).getName()).isEqualTo("Space Marines");
-        assertThat(result.get(1).getName()).isEqualTo("Orcs");
-        verify(factionRepository).findAll();
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getContent()).contains(marines, orcs);
+        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getNumber()).isEqualTo(0);
+        assertThat(result.getSize()).isEqualTo(10);
+        verify(factionRepository).findAll(pageable);
     }
 
     @Test

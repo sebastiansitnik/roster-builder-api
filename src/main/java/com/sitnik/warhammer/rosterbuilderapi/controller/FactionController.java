@@ -5,6 +5,11 @@ import com.sitnik.warhammer.rosterbuilderapi.service.FactionService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -21,9 +26,9 @@ public class FactionController {
 
     @GetMapping
     @Operation(summary = "Get All Factions")
-    public ResponseEntity<List<Faction>> findAll() {
-        List<Faction> factions = factionService.findAll();
-        return ResponseEntity.ok(factions);
+    public ResponseEntity<Page<Faction>> findAll(@ParameterObject
+                                                     @PageableDefault(size = 10, page = 0, sort = "name", direction = Sort.Direction.ASC) Pageable pageable) {
+        return ResponseEntity.ok(factionService.findAll(pageable));
     }
 
     @GetMapping("/{id}")
