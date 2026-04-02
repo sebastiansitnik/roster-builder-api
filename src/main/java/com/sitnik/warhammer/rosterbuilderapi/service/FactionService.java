@@ -6,6 +6,8 @@ import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,8 +19,8 @@ public class FactionService {
 
     private final FactionRepository factionRepository;
 
-    public List<Faction> findAll() {
-        return factionRepository.findAll();
+    public Page<Faction> findAll(Pageable pageable) {
+        return factionRepository.findAll(pageable);
     }
 
     public Faction findById(Long id) {
