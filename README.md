@@ -3,7 +3,7 @@
 REST API for building and managing Warhammer 40k army rosters. Features faction management, roster creation, JWT authentication, Swagger docs, and full test coverage.
 
 [![Java CI](https://github.com/sebastiansitnik/roster-builder-api/actions/workflows/ci.yml/badge.svg)](https://github.com/sebastiansitnik/roster-builder-api/actions/workflows/ci.yml)
-
+[![Qodana](https://github.com/sebastiansitnik/roster-builder-api/actions/workflows/qodana_code_quality.yml/badge.svg?branch=main)](https://github.com/sebastiansitnik/roster-builder-api/actions/workflows/qodana_code_quality.yml)
 ## ✨ Key Features
 
 - 🪖 **Faction Management** - Space Marines, Orks, Necrons, etc.
