@@ -1,64 +1,75 @@
-Warhammer 40k Roster Builder API - WORK IN PROGRESS🚀
+# Warhammer 40k Roster Builder API 🚀
+
+REST API for building and managing Warhammer 40k army rosters. Features faction management, roster creation, JWT authentication, Swagger docs, and full test coverage.
 
 [![Java CI](https://github.com/sebastiansitnik/roster-builder-api/actions/workflows/ci.yml/badge.svg)](https://github.com/sebastiansitnik/roster-builder-api/actions/workflows/ci.yml)
 
-REST API for creating, managing Warhammer 40k army rosters.
+## ✨ Key Features
 
-✨ Features
+- 🪖 **Faction Management** - Space Marines, Orks, Necrons, etc.
+- ⚔️ **Roster Building** - Create and validate army lists
+- 🔐 **JWT Authentication** - Secure API access
+- 📊 **Swagger UI** - Interactive API docs
+- ✅ **100% Test Coverage** - Unit & integration tests
 
-    🪖 Faction management (Space Marines, Orks, Necrons, etc.)
+## 🛠 Tech Stack
 
-    ⚔️ Simple Roster creation
+| Backend | Database | Security | Docs | Testing |
+|---------|----------|----------|------|---------|
+| Spring Boot 3.3.13 | H2 | Spring Security + JWT | OpenAPI/Swagger | JUnit 5 |
 
-🛠 Tech Stack
+## 🚀 Quick Start
 
-    Backend: Spring Boot 3.3.13, Spring Data JPA, Spring Security (JWT)
-    Database: H2
-    Documentation: OpenAPI (Swagger)
-    Tests: JUnit 5
+### Prerequisites
+- **Java 21+**
+- **Maven 3.9+**
 
-🚀 Quick Start
+```bash
+# Clone & build
+git clone https://github.com/sebastiansitnik/roster-builder-api
+cd roster-builder-api
+mvn clean install
 
-    Prerequisites:
-    
-        Java 21
+# Run
+mvn spring-boot:run
 
-Clone & Build
+# API Docs
+http://localhost:8080/swagger-ui.html
+```
 
-    git clone https://github.com/sebastiansitnik/roster-builder-api
-    cd roster-builder-api
-    mvn clean install
+## 📡 API Example
 
-📡 API Endpoints
+```bash
+# Get factions
+curl -X GET http://localhost:8080/api/v1/factions
 
-Swagger UI: http://localhost:8080/swagger-ui.html
+# Create roster (with JWT)
+curl -X POST http://localhost:8080/api/v1/rosters \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"factionId": 1, "units": [...]}'
+```
 
-🗄 Database Schema
+## 🧪 Testing
 
-    Faction -> Roster
+```bash
+mvn test                    # All tests (100% coverage)
+mvn test -Dtest=*ControllerTest  # Controller tests only
+```
 
-See /docs/architecture.md for details
+## 🗄 Project Structure
 
-🧪 Testing
+src/main/java/com/sitnik/warhammer/rosterbuilderapi/
 
-    mvn test                    # All tests
-    mvn test -Dtest=*RosterServiceTest  # Single class
-Coverage: 100%
+    ├── config/ # Security, JPA, Swagger
+    ├── controller/ # REST endpoints
+    ├── dto/ # Request/Response DTOs
+    ├── entity/ # JPA entities
+    ├── repository/ # Spring Data JPA
+    ├── security/ # JWT auth
+    ├── service/ # Business logic
+    └── exception/ # Global error handling
 
-🔧 Configuration
+---
 
-Full config in application.yml
-
-📁 Project Structure
-
-    src/main/java/com/sitnik/warhammer/rosterbuilderapi/
-    ├── config/          # Spring Security, JPA, Swagger
-    ├── controller/      # REST endpoints
-    ├── dto/             # Request/Response DTOs
-    ├── entity/          # JPA Entities
-    ├── enums/           # Domain enums
-    ├── exception/       # Global exception handling
-    ├── repository/      # Spring Data JPA
-    ├── security/        # JWT, Authentication
-    ├── service/         # Business logic
-    └── util/            # Helpers, mappers
+**Built with Spring Boot** | **100% Test Coverage** | **Swagger Documented** | **JWT Secured**
