@@ -12,6 +12,43 @@ on:
       - develop
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build with Maven
+        run: mvn -B clean compile --file pom.xml
+
+      - name: Run tests
+        run: mvn -B test --file pom.xml
+
+      - name: Start application (smoke test)
+        run: |
+          nohup mvn spring-boot:run -Dspring-boot.run.jvmArguments="-Dserver.port=8080" &
+          APP_PID=$!
+          echo "App PID: $APP_PID"
+          sleep 20  # Wait for startup
+
+          # Health check
+          curl -f http://localhost:8080/actuator/health || exit 1
+
+          # Test API endpoint
+          curl -f http://localhost:8080/api/factions || exit 1
+
+          # Shutdown
+          kill $APP_PID || true
+
+      - name: Build & package
+        run: mvn -B package --file pom.xml
   test:
     name: Run tests
     runs-on: ubuntu-latest
