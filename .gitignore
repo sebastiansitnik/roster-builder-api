@@ -1,6 +1,5 @@
 # Maven wrapper
 .mvn/wrapper/maven-wrapper.jar
-HELP.md
 
 # Maven
 .mvn/timing.properties
